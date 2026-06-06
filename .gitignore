@@ -1,1 +1,5 @@
 /venv/
+/typings/
+/build/
+/dist/
+*.spec

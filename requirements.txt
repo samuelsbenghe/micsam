@@ -1,3 +1,5 @@
 pystray
 pillow
 keyboard
+pyinstaller
+pywin32
