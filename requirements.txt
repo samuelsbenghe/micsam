@@ -3,3 +3,4 @@ pillow
 keyboard
 pyinstaller
 pywin32
+requests

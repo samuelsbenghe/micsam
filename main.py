@@ -1,12 +1,27 @@
+# System imports
+import os
 import sys
-from typing import Any, cast
 import threading
+import json
+from pathlib import Path
+from typing import Any, cast
+
+# Keyboard
 import keyboard
+
+# Windows-specific imports for mutex and tray icon
 import win32event
 import win32api
 import winerror
 import pystray
+
+# HTTP requests
+import requests
+
+# PIL
 from PIL import Image, ImageDraw, ImageFont
+
+# GUI
 import tkinter as tk
 
 # prevent duplicate instance
@@ -16,14 +31,42 @@ mutex = win32event.CreateMutex(  # pyright: ignore[reportUnknownMemberType]
 
 if win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS:
     sys.exit(0)
+# ---------------- UPDATER CHECK ----------------
 
+VERSION = "0.0.1"
+REPORT = "samuelsbenghe/micsam"
+
+
+def get_latest_release():
+    url = f"https://api.github.com/repos/{REPORT}/releases/latest"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+
+# ---------------- STATE MANAGEMENT ----------------
 state = {"active": False}
+appdata = Path(os.getenv("APPDATA", "."))
+mic_sam_dir = appdata / "MicSam"
+mic_sam_dir.mkdir(exist_ok=True)
+config_file = mic_sam_dir / "config.json"
+
+if config_file.exists():
+    with open(config_file, "r") as f:
+        state.update(json.load(f))
+else:
+    with open(config_file, "w") as f:
+        json.dump(state, f)
+
+
+# ---------------- GUI SETUP ----------------
 root = tk.Tk()
-root.title("My App")
+root.title("MicSam Controller v" + VERSION)
+
 
 # ---------------- ICON ----------------
-
-
 def create_icon(color: str) -> Image.Image:
     img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
@@ -88,7 +131,7 @@ def quit_app(icon=None, item=None):
 # ---------------- TRAY SETUP ----------------
 
 icon = pystray.Icon(
-    "MyApp",
+    "MicSam",
     create_icon("red"),
     "Inactive",
     menu=pystray.Menu(
